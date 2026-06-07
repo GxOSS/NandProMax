@@ -1,0 +1,15 @@
+[package]
+name = "nandpromax"
+version = "0.0.1"
+edition = "2021"
+[dependencies.ftdi-embedded-hal]
+version = "0.24.0"
+features = ["libftd2xx", "libftd2xx-static"]
+
+[dependencies]
+anyhow = "1"
+clap = { version = "4", features = ["derive"] }
+serialport = "4"
+eh0 = { package = "embedded-hal", version = "0.2.7", features = ["unproven"] }
+eh1 = { package = "embedded-hal", version = "1" }
+ehnb1 = { package = "embedded-hal-nb", version = "1" }
