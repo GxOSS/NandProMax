@@ -21,7 +21,7 @@ jobs:
             target: x86_64-unknown-linux-gnu
             exe: nandpromax
             out_ext: ""
-          - os: ubuntu-latest
+          - os: ubuntu-24.04-arm
             target: aarch64-unknown-linux-gnu
             exe: nandpromax
             out_ext: ""
@@ -53,7 +53,22 @@ jobs:
         with:
           workspaces: . -> target
 
+      - name: Install Linux deps
+        if: runner.os == 'Linux'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends libudev-dev pkg-config ca-certificates curl unzip
+
+      - name: Install libftd2xx (Linux/macOS)
+        if: runner.os != 'Windows'
+        run: |
+          bash scripts/install_libftd2xx.sh
+
       - name: Build
+        env:
+          LIBRARY_PATH: /usr/local/lib
+          LD_LIBRARY_PATH: /usr/local/lib
+          DYLD_LIBRARY_PATH: /usr/local/lib
         run: cargo build --release --target ${{ matrix.target }}
 
       - name: Stage artifact
