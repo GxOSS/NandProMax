@@ -55,10 +55,30 @@ fi
 
 fetch() {
   local out="$1"
+  local user_agent="${HTTP_USER_AGENT:-Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/123.0 Safari/537.36}"
+  local referer="${HTTP_REFERER:-https://ftdichip.com/}"
+  if [[ "$url" == file://* ]]; then
+    local src="${url#file://}"
+    [[ -f "$src" ]] || die "file URL does not exist: $url"
+    cp -f "$src" "$out"
+    return 0
+  fi
+  if [[ "$url" != http://* && "$url" != https://* ]]; then
+    [[ -f "$url" ]] || die "URL is not http(s) and file does not exist: $url"
+    cp -f "$url" "$out"
+    return 0
+  fi
   if command -v curl >/dev/null 2>&1; then
-    curl -fsSL "$url" -o "$out"
+    curl -fSL --retry 5 --retry-delay 1 --connect-timeout 20 --max-time 600 \
+      -H "User-Agent: $user_agent" -e "$referer" \
+      "$url" -o "$out" || {
+        if curl -sSIL -H "User-Agent: $user_agent" -e "$referer" "$url" >/dev/null 2>&1; then
+          die "download failed: $url"
+        fi
+        die "download failed (possible 403). If ftdichip blocks CI traffic, mirror the file elsewhere and override the URL_* variables."
+      }
   elif command -v wget >/dev/null 2>&1; then
-    wget -qO "$out" "$url"
+    wget --user-agent="$user_agent" --referer="$referer" -qO "$out" "$url" || die "download failed (possible 403): $url"
   else
     die "need curl or wget to download"
   fi

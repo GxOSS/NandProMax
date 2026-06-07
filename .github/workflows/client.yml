@@ -63,6 +63,12 @@ jobs:
         if: runner.os != 'Windows'
         run: |
           bash scripts/install_libftd2xx.sh
+      
+      - name: Install libftd2xx (Windows)
+        if: runner.os == 'Windows'
+        shell: pwsh
+        run: |
+          ./scripts/install_libftd2xx.ps1 -OutDir "target/${{ matrix.target }}/release"
 
       - name: Build
         env:
@@ -76,6 +82,13 @@ jobs:
         run: |
           mkdir -p dist
           cp "target/${{ matrix.target }}/release/${{ matrix.exe }}" "dist/nandpromax-${{ matrix.target }}${{ matrix.out_ext }}"
+          if [[ "${{ runner.os }}" == "Windows" ]]; then
+            if [[ -f "target/${{ matrix.target }}/release/ftd2xx.dll" ]]; then
+              cp "target/${{ matrix.target }}/release/ftd2xx.dll" "dist/ftd2xx.dll"
+            elif [[ -f "target/${{ matrix.target }}/release/libftd2xx.dll" ]]; then
+              cp "target/${{ matrix.target }}/release/libftd2xx.dll" "dist/libftd2xx.dll"
+            fi
+          fi
 
       - name: Upload artifact
         uses: actions/upload-artifact@v4
